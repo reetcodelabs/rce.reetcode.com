@@ -1,0 +1,22 @@
+{
+  "name": "japa-tests",
+  "type": "module",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test.js"
+  },
+  "version": "0.0.0",
+  "devDependencies": {
+    "@japa/expect": "^3.0.0-1",
+    "@japa/runner": "^3.0.0-9",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "@types/jest": "^29.5.11",
+    "axios": "^1.6.3",
+    "jest": "^29.7.0",
+    "vitest": "^1.1.0"
+  }
+}
