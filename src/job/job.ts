@@ -329,9 +329,9 @@ export class Job implements JobPrerequisites {
           exitSignal = signal ?? "";
 
           resolve({
-            stdout: stdout.slice(0, 5000),
-            stderr: stderr.slice(0, 5000),
-            output: output.slice(0, 5000),
+            stdout,
+            stderr,
+            output,
             exitCode,
             signal: exitSignal,
           });
