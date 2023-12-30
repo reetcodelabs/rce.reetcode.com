@@ -13,4 +13,4 @@ configure({
   },
 });
 
-run();
+module.exports = { run };
