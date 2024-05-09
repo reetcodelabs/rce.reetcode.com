@@ -39,14 +39,21 @@ const PORT = process.env?.PORT || "50051";
     language: z.string().min(1),
     version: z.string().default("latest"),
     code: z.string().optional(),
-    files: z.array(z.object({
-      name: z.string().min(1),
-      code: z.string().min(1),
-      entrypoint: z.boolean().default(false)
-    })).optional(),
+    files: z
+      .array(
+        z.object({
+          name: z.string().min(1),
+          code: z.string().min(1),
+          entrypoint: z.boolean().default(false),
+        })
+      )
+      .optional(),
     compileTimeout: z.number().max(30_000).optional(),
     runTimeout: z.number().max(30_000).optional(),
-    memoryLimit: z.number().max(1024 * 1024 * 1024).optional()
+    memoryLimit: z
+      .number()
+      .max(2048 * 1024 * 1024)
+      .optional()
   });
 
   const rceServiceImpl = new RceServiceImpl(registeredRuntimes, users);
