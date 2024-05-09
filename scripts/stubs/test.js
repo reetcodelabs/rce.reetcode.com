@@ -9,8 +9,8 @@ configure({
   plugins: [expect()],
   reporters: {
     activated: ["ndjson"],
-    list: [reporters.spec(), reporters.ndjson(), reporters.dot()],
-  },
+    list: [reporters.spec(), reporters.ndjson(), reporters.dot()]
+  }
 });
 
 run();
