@@ -106,9 +106,9 @@ function executeNpmInstallForUser(username, uid) {
       exitCode = code ?? 0;
       exitSignal = signal ?? "";
       resolve({
-        stdout: stdout.slice(0, 5000),
-        stderr: stderr.slice(0, 5000),
-        output: output.slice(0, 5000),
+        stdout: stdout.slice(0, 50000),
+        stderr: stderr.slice(0, 50000),
+        output: output.slice(0, 50000),
         exitCode,
         signal: exitSignal,
       });

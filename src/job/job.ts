@@ -290,7 +290,7 @@ export class Job implements JobPrerequisites {
           cwd: "/code/" + username,
           gid: gid,
           uid: uid,
-          timeout: timeout ?? 5_000,
+          timeout: timeout ?? 15_000,
           stdio: "pipe",
           detached: true,
         });
@@ -328,9 +328,9 @@ export class Job implements JobPrerequisites {
           exitSignal = signal ?? "";
 
           resolve({
-            stdout: stdout.slice(0, 5000),
-            stderr: stderr.slice(0, 5000),
-            output: output.slice(0, 5000),
+            stdout: stdout.slice(0, 50000),
+            stderr: stderr.slice(0, 50000),
+            output: output.slice(0, 50000),
             exitCode,
             signal: exitSignal,
           });
