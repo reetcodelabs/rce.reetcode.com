@@ -4,14 +4,13 @@ import {
   Runtimes,
   CodeRequest,
   CodeResponse,
-  ICodeExecutionEngineService
+  ICodeExecutionEngineService,
 } from "@/stub/rce";
 import { Runtime as RceRuntime } from "@/runtime/runtime";
 import { SystemUsers } from "./user/user";
 import { CommandOutput, Job } from "./job/job";
 import { ClientError, ServerError } from "./Error";
 import { Files } from "./job/files";
-
 
 export class RceServiceImpl implements ICodeExecutionEngineService {
   constructor(
@@ -28,7 +27,14 @@ export class RceServiceImpl implements ICodeExecutionEngineService {
   }
 
   public listRuntimes(): Runtimes {
-    return { runtime: this._registeredRuntimes.map(v => ({ language: v.language, version: v.version, aliases: v.aliases, compiled: v.compiled })) };
+    return {
+      runtime: this._registeredRuntimes.map((v) => ({
+        language: v.language,
+        version: v.version,
+        aliases: v.aliases,
+        compiled: v.compiled,
+      })),
+    };
   }
 
   public ping(): PingResponse {
@@ -37,102 +43,117 @@ export class RceServiceImpl implements ICodeExecutionEngineService {
 
   public async execute(req: CodeRequest): Promise<CodeResponse> {
     const span = Sentry.getCurrentHub()?.getScope()?.getSpan()?.startChild({
-        op: "rce_service.execute"
+      op: "rce_service.execute",
     });
 
     try {
-        const runtimeIndex = this._registeredRuntimes.findIndex(
-            (r) => r.language === req.language && (req.version === "latest" ? r.latest : r.version === req.version)
+      const runtimeIndex = this._registeredRuntimes.findIndex(
+        (r) =>
+          r.language === req.language &&
+          (req.version === "latest" ? r.latest : r.version === req.version)
+      );
+
+      if (runtimeIndex < 0) {
+        throw new ClientError("Runtime not found");
+      }
+
+      const runtime = this._registeredRuntimes[runtimeIndex];
+
+      // Convert to Files class
+      const files = new Files(
+        req.files.map((o) => ({
+          fileName: o.fileName,
+          code: o.code,
+          entrypoint: o.entrypoint,
+        })),
+        runtime.extension
+      );
+
+      // Validate allowed entrypoints
+      if (
+        runtime.allowedEntrypoints !== -1 &&
+        files.files.length > 1 &&
+        files.files.filter((i) => i.entrypoint === true).length >
+          runtime.allowedEntrypoints
+      ) {
+        throw new ClientError(
+          `Maximum allowed entrypoint exceeded of ${runtime.allowedEntrypoints} entries`
         );
+      }
 
-        if (runtimeIndex < 0) {
-            throw new ClientError("Runtime not found");
-        }
+      // Acquire the available user.
+      const user = await this._users.acquireUntilAvailable();
+      if (user === null) {
+        throw new ServerError("no user available");
+      }
 
-        const runtime = this._registeredRuntimes[runtimeIndex];
+      // Create a job.
+      const job = new Job(
+        user,
+        runtime,
+        files,
+        req.compileTimeout,
+        req.runTimeout,
+        req.memoryLimit
+      );
 
-        // Convert to Files class
-        const files = new Files(req.files.map(o => ({ fileName: o.fileName, code: o.code, entrypoint: o.entrypoint })), runtime.extension);
+      await job.createFile();
+      const compileOutput: CommandOutput = {
+        stdout: "",
+        stderr: "",
+        output: "",
+        exitCode: 0,
+        signal: "",
+      };
 
-        // Validate allowed entrypoints
-        if (runtime.allowedEntrypoints !== -1 && files.files.length > 1 && files.files.filter((i) => i.entrypoint === true).length > runtime.allowedEntrypoints) {
-            throw new ClientError(`Maximum allowed entrypoint exceeded of ${runtime.allowedEntrypoints} entries`);
-        }
+      if (runtime.compiled) {
+        const output = await job.compile();
 
-        // Acquire the available user.
-        const user = this._users.acquire();
-        if (user === null) {
-            throw new ServerError("no user available");
-        }
-
-        // Create a job.
-        const job = new Job(
-            user,
-            runtime,
-            files,
-            req.compileTimeout,
-            req.runTimeout,
-            req.memoryLimit
-        );
-
-        await job.createFile();
-        const compileOutput: CommandOutput = {
-            stdout: "",
-            stderr: "",
-            output: "",
-            exitCode: 0,
-            signal: ""
-        };
-
-        if (runtime.compiled) {
-            const output = await job.compile();
-
-            if (output.exitCode !== 0) {
-                this._users.release(user.uid);
-                return {
-                    language: runtime.language,
-                    version: runtime.version,
-                    compile: {
-                        output: output.output,
-                        stderr: output.stderr,
-                        stdout: output.stdout,
-                        exitCode: output.exitCode
-                    },
-                    runtime: {
-                        output: "",
-                        stdout: "",
-                        stderr: "",
-                        exitCode: 0
-                    }
-                };
-            }
-
-            Object.assign(compileOutput, output);
-        }
-
-
-        const runtimeOutput = await job.run();
-        // Release the user.
-        this._users.release(user.uid);
-
-        const response: CodeResponse = {
+        if (output.exitCode !== 0) {
+          this._users.release(user.uid);
+          return {
             language: runtime.language,
             version: runtime.version,
             compile: {
-                output: compileOutput.output,
-                stderr: compileOutput.stderr,
-                stdout: compileOutput.stdout,
-                exitCode: compileOutput.exitCode
+              output: output.output,
+              stderr: output.stderr,
+              stdout: output.stdout,
+              exitCode: output.exitCode,
             },
             runtime: {
-                output: runtimeOutput.output,
-                stdout: runtimeOutput.stdout,
-                stderr: runtimeOutput.stderr,
-                exitCode: runtimeOutput.exitCode
-            }
-        };
+              output: "",
+              stdout: "",
+              stderr: "",
+              exitCode: 0,
+            },
+          };
+        }
 
-        return response;
+        Object.assign(compileOutput, output);
+      }
+
+      const runtimeOutput = await job.run();
+      // Release the user.
+      this._users.release(user.uid);
+
+      const response: CodeResponse = {
+        language: runtime.language,
+        version: runtime.version,
+        compile: {
+          output: compileOutput.output,
+          stderr: compileOutput.stderr,
+          stdout: compileOutput.stdout,
+          exitCode: compileOutput.exitCode,
+        },
+        runtime: {
+          output: runtimeOutput.output,
+          stdout: runtimeOutput.stdout,
+          stderr: runtimeOutput.stderr,
+          exitCode: runtimeOutput.exitCode,
+        },
+      };
+
+      return response;
     } finally {
       span?.finish();
     }
