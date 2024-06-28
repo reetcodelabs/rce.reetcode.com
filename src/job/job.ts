@@ -130,12 +130,12 @@ export class Job implements JobPrerequisites {
         stderr: "",
         output: "",
         exitCode: 0,
-        signal: "",
+        signal: ""
       };
     }
 
     const span = Sentry.getCurrentHub()?.getScope()?.getSpan()?.startChild({
-      op: "job.compile",
+      op: "job.compile"
     });
 
     try {
@@ -150,7 +150,7 @@ export class Job implements JobPrerequisites {
         "/usr/local/bin/nosocket",
         ...this.runtime.buildCommand.map((arg) =>
           arg.replace("{file}", this._entrypointsPath.join(" "))
-        ),
+        )
       ];
 
       const buildCommandOutput = await this.executeCommand(buildCommand);
@@ -172,7 +172,7 @@ export class Job implements JobPrerequisites {
 
   async run(): Promise<CommandOutput> {
     const span = Sentry.getCurrentHub()?.getScope()?.getSpan()?.startChild({
-      op: "job.run",
+      op: "job.run"
     });
 
     try {
@@ -227,20 +227,20 @@ export class Job implements JobPrerequisites {
 
   private async cleanup(): Promise<void> {
     const span = Sentry.getCurrentHub()?.getScope()?.getSpan()?.startChild({
-      op: "job.cleanup",
+      op: "job.cleanup"
     });
 
     try {
       // Crawl the directory and delete all files.
       const allFiles = await fs.readdir(this._baseFilePath, {
-        withFileTypes: false,
+        withFileTypes: false
       });
 
       const filesToNotDelete = [
         "node_modules",
         "test.js",
         "package.json",
-        "package-lock.json",
+        "package-lock.json"
       ];
 
       const files = allFiles.filter((file) => !filesToNotDelete.includes(file));
@@ -250,7 +250,7 @@ export class Job implements JobPrerequisites {
           force: true,
           recursive: true,
           maxRetries: 3,
-          retryDelay: 100,
+          retryDelay: 100
         });
       });
 
@@ -265,8 +265,8 @@ export class Job implements JobPrerequisites {
     const span = Sentry.getCurrentHub()?.getScope()?.getSpan()?.startChild({
       op: "job.execute_command",
       data: {
-        command,
-      },
+        command
+      }
     });
 
     try {
@@ -286,14 +286,14 @@ export class Job implements JobPrerequisites {
             LOGGER_TOKEN: "",
             LOGGER_SERVER_ADDRESS: "",
             ENVIRONMENT: "",
-            ...this.runtime.environment,
+            ...this.runtime.environment
           },
           cwd: "/code/" + username,
           gid: gid,
           uid: uid,
           timeout: timeout ?? 15_000,
           stdio: "pipe",
-          detached: true,
+          detached: true
         });
 
         cmd.stdout.on("data", (data) => {
@@ -329,17 +329,11 @@ export class Job implements JobPrerequisites {
           exitSignal = signal ?? "";
 
           resolve({
-<<<<<<< HEAD
             stdout: stdout.slice(0, 50000),
             stderr: stderr.slice(0, 50000),
             output: output.slice(0, 50000),
-=======
-            stdout,
-            stderr,
-            output,
->>>>>>> main
             exitCode,
-            signal: exitSignal,
+            signal: exitSignal
           });
         });
       });
