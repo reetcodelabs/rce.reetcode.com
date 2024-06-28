@@ -189,21 +189,22 @@ export class Job implements JobPrerequisites {
         finalFileName.push(baseName);
       }
 
-      const runCommand: string[] = [
-        "/usr/bin/nice",
-        "/usr/bin/prlimit",
-        "--nproc=" + this.runtime.processLimit.toString(),
-        "--nofile=2048",
-        "--fsize=30000000", // 30MB
-        "--rttime=" + this.runTimeout.toString(),
-      ];
+      // const runCommand: string[] = [
+      //   "/usr/bin/nice",
+      //   "/usr/bin/prlimit",
+      //   "--nproc=" + this.runtime.processLimit.toString(),
+      //   "--nofile=2048",
+      //   "--fsize=30000000", // 30MB
+      //   "--rttime=" + this.runTimeout.toString(),
+      // ];
 
-      if (this.runtime.shouldLimitMemory) {
-        runCommand.push("--as=" + this.memoryLimit.toString());
-      }
+      // if (this.runtime.shouldLimitMemory) {
+      //   runCommand.push("--as=" + this.memoryLimit.toString());
+      // }
+      const runCommand: string[] = [];
 
       runCommand.push(
-        "/usr/local/bin/nosocket",
+        // "/usr/local/bin/nosocket",
         ...this.runtime.runCommand.map((arg) =>
           arg.includes("{file}")
             ? arg.replace("{file}", finalFileName.join(" "))
@@ -328,9 +329,15 @@ export class Job implements JobPrerequisites {
           exitSignal = signal ?? "";
 
           resolve({
+<<<<<<< HEAD
             stdout: stdout.slice(0, 50000),
             stderr: stderr.slice(0, 50000),
             output: output.slice(0, 50000),
+=======
+            stdout,
+            stderr,
+            output,
+>>>>>>> main
             exitCode,
             signal: exitSignal,
           });
