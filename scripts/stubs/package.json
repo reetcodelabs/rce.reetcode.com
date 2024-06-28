@@ -14,9 +14,6 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
-    "axios": "^1.6.3",
-    "happy-dom": "^12.10.3",
-    "pixelmatch": "^5.3.0",
     "vitest": "^1.6.0",
     "msw": "^2.3.1",
     "node-fetch": "^3.3.2",
