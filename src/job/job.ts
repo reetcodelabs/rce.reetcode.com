@@ -153,7 +153,10 @@ export class Job implements JobPrerequisites {
         )
       ];
 
+      console.time("@exec");
+      console.log(`Executing command: ${this._entrypointsPath.join(" ")}`);
       const buildCommandOutput = await this.executeCommand(buildCommand);
+      console.timeEnd("@exec.");
 
       if (buildCommandOutput.exitCode !== 0) {
         await this.cleanup();
