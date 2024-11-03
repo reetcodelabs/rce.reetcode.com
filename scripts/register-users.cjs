@@ -62,60 +62,6 @@ function getStubs() {
   }));
 }
 
-function executeNpmInstallForUser(username, uid) {
-  const gid = GLOBAL_GROUP_ID;
-
-  console.log(`Executing npm install for user ${username}...`);
-
-  return new Promise((resolve, reject) => {
-    let stdout = "";
-    let stderr = "";
-    let output = "";
-    let exitCode = 0;
-    let exitSignal = "";
-
-    const cmd = cp.spawn("/opt/node/20.9.0/bin/npm", ["install"], {
-      cwd: "/code/" + username,
-      gid: gid,
-      uid: uid,
-      timeout: 25000,
-      stdio: "pipe",
-      detached: true,
-      env: {
-        PATH: "/opt/node/20.9.0/bin",
-      },
-    });
-
-    cmd.stdout.on("data", (data) => {
-      stdout += data.toString();
-      output += data.toString();
-      if (process.env.ENVIRONMENT === "development") {
-        console.log(data.toString());
-      }
-    });
-
-    cmd.on("error", (error) => {
-      cmd.stdout.destroy();
-      cmd.stderr.destroy();
-      reject(error.message);
-    });
-
-    cmd.on("close", (code, signal) => {
-      cmd.stdout.destroy();
-      cmd.stderr.destroy();
-      exitCode = code ?? 0;
-      exitSignal = signal ?? "";
-      resolve({
-        stdout: stdout.slice(0, 50000),
-        stderr: stderr.slice(0, 50000),
-        output: output.slice(0, 50000),
-        exitCode,
-        signal: exitSignal,
-      });
-    });
-  });
-}
-
 const TOTAL_USERS = 50;
 const GLOBAL_GROUP_ID = 64101;
 
